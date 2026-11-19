@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+
+    <servlet>
+        <servlet-name>ObservationPointServlet</servlet-name>
+        <servlet-class>com.water.servlet.ObservationPointServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ObservationPointServlet</servlet-name>
+        <url-pattern>/points</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>WaterSampleServlet</servlet-name>
+        <servlet-class>com.water.servlet.WaterSampleServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>WaterSampleServlet</servlet-name>
+        <url-pattern>/samples</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>MeasurementServlet</servlet-name>
+        <servlet-class>com.water.servlet.MeasurementServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>MeasurementServlet</servlet-name>
+        <url-pattern>/measurements</url-pattern>
+    </servlet-mapping>
+
+</web-app>

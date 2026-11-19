@@ -6,6 +6,9 @@ public class ObservationPoint {
     private String locationDescription;
     private String coordinates;
 
+    public ObservationPoint() {
+    }
+
     public ObservationPoint(int id, String name, String locationDescription, String coordinates) {
         this.id = id;
         this.name = name;

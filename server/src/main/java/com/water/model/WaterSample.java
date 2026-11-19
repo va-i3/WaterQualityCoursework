@@ -8,6 +8,9 @@ public class WaterSample {
     private LocalDateTime samplingDate;
     private String status;
 
+    public WaterSample() {
+    }
+
     public WaterSample(int id, int observationPointId, LocalDateTime samplingDate, String status) {
         this.id = id;
         this.observationPointId = observationPointId;

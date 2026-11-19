@@ -15,11 +15,10 @@ public class MeasurementDao {
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1, measurement.getWaterSampleId());
-            // Використовуємо реальні поля з бази даних
-            pstmt.setString(2, "Загальний показник"); // назва параметра за замовчуванням
-            pstmt.setDouble(3, measurement.getParameter1()); // збережемо значення як measured_value
-            pstmt.setDouble(4, 100.0); // нормативний ліміт
-            pstmt.setInt(5, 0);       // чи критичне (0 - ні)
+            pstmt.setString(2, "Загальний показник");
+            pstmt.setDouble(3, measurement.getParameter1());
+            pstmt.setDouble(4, 100.0);
+            pstmt.setInt(5, 0);
 
             pstmt.executeUpdate();
 
@@ -44,7 +43,7 @@ public class MeasurementDao {
                 Measurement measurement = new Measurement(
                         rs.getInt("id"),
                         rs.getInt("sample_id"),
-                        rs.getDouble("measured_value"), // передаємо виміряне значення
+                        rs.getDouble("measured_value"),
                         0.0,
                         0.0,
                         0.0
@@ -53,5 +52,37 @@ public class MeasurementDao {
             }
         }
         return measurements;
+    }
+
+    // Оновлення (UPDATE) існуючого вимірювання за ID
+    public void update(Measurement measurement) throws SQLException {
+        String sql = "UPDATE measurements SET sample_id = ?, measured_value = ? WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, measurement.getWaterSampleId());
+            pstmt.setDouble(2, measurement.getParameter1());
+            pstmt.setInt(3, measurement.getId());
+
+            int updatedRows = pstmt.executeUpdate();
+            if (updatedRows == 0) {
+                throw new SQLException("Вимірювання з ID=" + measurement.getId() + " не знайдено для оновлення.");
+            }
+        }
+    }
+
+    // Видалення (DELETE) вимірювання за ID
+    public void delete(int id) throws SQLException {
+        String sql = "DELETE FROM measurements WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+
+            int deletedRows = pstmt.executeUpdate();
+            if (deletedRows == 0) {
+                throw new SQLException("Вимірювання з ID=" + id + " не знайдено для видалення.");
+            }
+        }
     }
 }

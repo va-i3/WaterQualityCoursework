@@ -3,10 +3,13 @@ package com.water.model;
 public class Measurement {
     private int id;
     private int waterSampleId;
-    private double parameter1; // наприклад, вміст кисню / забруднювач F1
-    private double parameter2; // F2
-    private double parameter3; // F3
-    private double waterQualityIndex; // Загальний індекс якості (наприклад, I = 0.40*F1 + 0.35*F2 + 0.25*F3)
+    private double parameter1;
+    private double parameter2;
+    private double parameter3;
+    private double waterQualityIndex;
+
+    public Measurement() {
+    }
 
     public Measurement(int id, int waterSampleId, double parameter1, double parameter2, double parameter3, double waterQualityIndex) {
         this.id = id;

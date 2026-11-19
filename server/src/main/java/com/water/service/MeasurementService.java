@@ -35,25 +35,47 @@ public class MeasurementService {
         }
     }
 
-    // Збереження вимірювання з автоматичним обчисленням індексу
-    public void addMeasurement(Measurement measurement) throws SQLException {
+    private void validateMeasurementForSave(Measurement measurement) {
         if (measurement == null) {
             throw new IllegalArgumentException("Об'єкт вимірювання не може бути null.");
         }
         if (measurement.getWaterSampleId() <= 0) {
             throw new IllegalArgumentException("Некоректний ID проби води для вимірювання.");
         }
-
         double calculatedIndex = calculateIntegralIndex(
                 measurement.getParameter1(),
                 measurement.getParameter2(),
                 measurement.getParameter3()
         );
         measurement.setWaterQualityIndex(calculatedIndex);
+    }
 
+    // Збереження вимірювання з автоматичним обчисленням індексу
+    public void addMeasurement(Measurement measurement) throws SQLException {
+        validateMeasurementForSave(measurement);
         measurementDao.save(measurement);
         logger.info("Успішно додано вимірювання для проби ID=" + measurement.getWaterSampleId() +
-                ". Інтегральний показник I = " + calculatedIndex);
+                ". Інтегральний показник I = " + measurement.getWaterQualityIndex());
+    }
+
+    // Оновлення вимірювання з перерахунком індексу
+    public void updateMeasurement(Measurement measurement) throws SQLException {
+        validateMeasurementForSave(measurement);
+        if (measurement.getId() <= 0) {
+            throw new IllegalArgumentException("Некоректний ID вимірювання для оновлення.");
+        }
+        measurementDao.update(measurement);
+        logger.info("Успішно оновлено вимірювання ID=" + measurement.getId() +
+                ". Інтегральний показник I = " + measurement.getWaterQualityIndex());
+    }
+
+    // Видалення вимірювання за ID
+    public void deleteMeasurement(int id) throws SQLException {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Некоректний ID вимірювання для видалення.");
+        }
+        measurementDao.delete(id);
+        logger.info("Успішно видалено вимірювання ID=" + id);
     }
 
     public List<Measurement> getAllMeasurements() throws SQLException {
