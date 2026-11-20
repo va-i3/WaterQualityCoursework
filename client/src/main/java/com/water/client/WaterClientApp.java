@@ -2,10 +2,12 @@ package com.water.client;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -14,13 +16,19 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.util.logging.Logger;
+
 public class WaterClientApp extends Application {
+
+    private static final Logger LOG = Logger.getLogger(WaterClientApp.class.getName());
 
     private final WaterHttpClient client = new WaterHttpClient("http://localhost:8080/water-monitoring-server");
     private final CsvMeasurementImporter csvImporter = new CsvMeasurementImporter(client);
     private final TableView<Measurement> table = new TableView<>();
+    private final ProgressBar importProgressBar = new ProgressBar(0);
     private final Label statusLabel = new Label("Готово");
 
+    private Button importCsvBtn;
     private Integer selectedId = null;
 
     @Override
@@ -126,16 +134,19 @@ public class WaterClientApp extends Application {
         Button reloadBtn = new Button("Оновити дані");
         reloadBtn.setOnAction(_ -> loadData());
 
-        Button importCsvBtn = new Button("Імпорт CSV");
-        importCsvBtn.setOnAction(_ -> importCsv());
+        importCsvBtn = new Button("Імпорт CSV");
+        importCsvBtn.setOnAction(_ -> startBackgroundCsvImport());
+
+        importProgressBar.setPrefWidth(220);
 
         HBox formRow1 = new HBox(8, sampleIdField, p1Field, p2Field, p3Field, wqiField);
         HBox buttonsRow = new HBox(8, addBtn, updateBtn, deleteBtn, reloadBtn, importCsvBtn);
+        HBox progressRow = new HBox(10, importProgressBar, statusLabel);
 
-        VBox root = new VBox(10, formRow1, buttonsRow, table, statusLabel);
+        VBox root = new VBox(10, formRow1, buttonsRow, table, progressRow);
         root.setPadding(new Insets(10));
 
-        stage.setScene(new Scene(root, 780, 480));
+        stage.setScene(new Scene(root, 780, 500));
         stage.setTitle("Water Quality Client");
         stage.show();
 
@@ -178,14 +189,42 @@ public class WaterClientApp extends Application {
         wqiField.clear();
     }
 
-    private void importCsv() {
-        try {
-            int imported = csvImporter.importDefaultCsv();
+    private void startBackgroundCsvImport() {
+        Task<Integer> task = csvImporter.createImportTask();
+
+        importCsvBtn.setDisable(true);
+        importProgressBar.progressProperty().unbind();
+        statusLabel.textProperty().unbind();
+
+        importProgressBar.progressProperty().bind(task.progressProperty());
+        statusLabel.textProperty().bind(task.messageProperty());
+
+        task.setOnSucceeded(_ -> {
+            importProgressBar.progressProperty().unbind();
+            statusLabel.textProperty().unbind();
+            importCsvBtn.setDisable(false);
+
+            int imported = task.getValue() != null ? task.getValue() : 0;
+            importProgressBar.setProgress(1.0);
+            statusLabel.setText("CSV-імпорт завершено. Імпортовано записів: " + imported);
             loadData();
-            statusLabel.setText("Імпортовано записів з CSV: " + imported);
-        } catch (Exception ex) {
-            statusLabel.setText("Помилка CSV-імпорту: " + ex.getMessage());
-        }
+        });
+
+        task.setOnFailed(_ -> {
+            importProgressBar.progressProperty().unbind();
+            statusLabel.textProperty().unbind();
+            importCsvBtn.setDisable(false);
+
+            Throwable ex = task.getException();
+            String reason = (ex != null && ex.getMessage() != null) ? ex.getMessage() : "Невідома помилка";
+            LOG.warning("Фоновий CSV-імпорт завершився помилкою: " + reason);
+            importProgressBar.setProgress(0);
+            statusLabel.setText("Помилка CSV-імпорту: " + reason);
+        });
+
+        Thread worker = new Thread(task, "csv-import-thread");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     private void loadData() {
